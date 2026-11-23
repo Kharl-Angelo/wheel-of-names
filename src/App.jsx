@@ -60,7 +60,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <h1>
-          <span className="logo" aria-hidden>◎</span> Wheel of Names
+          <span className="logo" aria-hidden>◎</span> Wheely
         </h1>
         <div className="topbar-actions">
           <button className="chip" onClick={() => setShowSettings(true)} disabled={drawing}>

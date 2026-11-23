@@ -1,4 +1,4 @@
-# Wheel of Names
+# Wheely
 
 ```
 npm install
