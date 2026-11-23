@@ -1,7 +1,7 @@
 export const TAU = Math.PI * 2
 
 // Names must be unique: "Ana", " ana ", "ANA" are the same person. First spelling wins, the rest go to `dupes`.
-export function parseNames(text) {
+export function parseNames(text, allowDupes = false) {
   const seen = new Set()
   const names = []
   const dupes = []
@@ -9,7 +9,7 @@ export function parseNames(text) {
     const name = line.trim().replace(/\s+/g, ' ')
     if (!name) continue
     const key = name.toLowerCase()
-    if (seen.has(key)) dupes.push(name)
+    if (!allowDupes && seen.has(key)) dupes.push(name)
     else {
       seen.add(key)
       names.push(name)

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Modal from './Modal'
 
 export const MODES = {
@@ -5,15 +6,23 @@ export const MODES = {
   race: { icon: '🏁', label: 'Race', desc: 'Everyone races to the finish line. First across win.' },
   shuffle: { icon: '🔀', label: 'Instant shuffle', desc: 'Names flicker in slots and lock in one by one.' },
 }
+// seconds per winner
 const SPEEDS = [
-  { v: 1.6, label: 'Slow' },
-  { v: 1, label: 'Normal' },
-  { v: 0.5, label: 'Fast' },
+  { v: 4, label: 'Slow' },
+  { v: 2.5, label: 'Normal' },
+  { v: 1, label: 'Fast' },
 ]
 
 export default function Settings({ value, onChange, onClose }) {
   const set = (patch) => onChange({ ...value, ...patch })
   const setPerRound = (n) => Number.isFinite(n) && set({ perRound: Math.max(1, Math.floor(n)) })
+  // draft keeps half-typed input like "0." on screen; only valid values are saved, blur shows the saved one
+  const [draft, setDraft] = useState(null)
+  const setSeconds = (raw) => {
+    setDraft(raw)
+    const s = parseFloat(raw)
+    if (s >= 0.2 && s <= 120) set({ seconds: s })
+  }
 
   return (
     <Modal title="Settings" onClose={onClose}>
@@ -41,9 +50,24 @@ export default function Settings({ value, onChange, onClose }) {
       <h3>Animation speed</h3>
       <div className="segmented">
         {SPEEDS.map((s) => (
-          <button key={s.v} className={value.speed === s.v ? 'active' : ''} onClick={() => set({ speed: s.v })}>{s.label}</button>
+          <button key={s.v} className={value.seconds === s.v ? 'active' : ''} onClick={() => set({ seconds: s.v })}>{s.label} · {s.v}s</button>
         ))}
       </div>
+      <label className="custom-seconds">
+        <span>Custom seconds per winner</span>
+        <input type="number" min="0.2" max="120" step="0.1" value={draft ?? value.seconds} onChange={(e) => setSeconds(e.target.value)} onBlur={() => setDraft(null)} />
+      </label>
+      <p className="muted small">Wheel and shuffle pause after each winner until you click Next. Race finishers cross this many seconds apart.</p>
+
+      <h3>Rules</h3>
+      <label className="toggle">
+        <input type="checkbox" checked={value.allowDuplicates} onChange={(e) => set({ allowDuplicates: e.target.checked })} />
+        <span>Allow duplicate names</span>
+      </label>
+      <label className="toggle">
+        <input type="checkbox" checked={value.removeWinners} onChange={(e) => set({ removeWinners: e.target.checked })} />
+        <span>Remove winners from later rounds</span>
+      </label>
 
       <label className="toggle">
         <input type="checkbox" checked={value.sound} onChange={(e) => set({ sound: e.target.checked })} />

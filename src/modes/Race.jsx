@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { TAU, sleep } from '../draw'
+import { sleep } from '../draw'
 import { beep } from '../sound'
 
 const RUNNERS = ['🐎', '🐆', '🐇', '🦄', '🐕', '🦊', '🐢', '🐈', '🦖', '🐿️', '🦘', '🐖']
 
-export default function Race({ pool, winners, speed, sound, onDone }) {
+export default function Race({ pool, winners, seconds, sound, onDone }) {
   const runners = useRef([])
   const [places, setPlaces] = useState({}) // lane index -> place
   const compact = pool.length > 25
@@ -16,7 +16,9 @@ export default function Race({ pool, winners, speed, sound, onDone }) {
       return
     }
     let alive = true
-    const D = 7000 * speed
+    // winners cross the line `seconds` apart; the last one at D
+    const N = seconds * 1000
+    const D = N * (winners.length + 1)
     // map winners to lane indexes (duplicate names take distinct lanes)
     const used = new Set()
     const winLanes = winners.map((w) => {
@@ -24,10 +26,11 @@ export default function Race({ pool, winners, speed, sound, onDone }) {
       used.add(i)
       return i
     })
-    // finish time per lane: winners cross in draw order between 0.7D and D, everyone else after D
+    // finish time per lane: winners cross in draw order at 2N, 3N, … D; everyone else after D
     const F = pool.map(() => D * (1.08 + Math.random() * 0.5))
-    winLanes.forEach((lane, k) => (F[lane] = D * (0.7 + (0.3 * (k + 1)) / winners.length)))
-    const wob = pool.map(() => ({ ph: Math.random() * TAU, f: 1.5 + Math.random() * 3 }))
+    winLanes.forEach((lane, k) => (F[lane] = N * (k + 2)))
+    // a ≤ 0.8 keeps speed (1 + a·cos(kπx)) positive; integer k makes the wobble 0 at start and finish
+    const wob = pool.map(() => ({ a: (Math.random() < 0.5 ? -1 : 1) * (0.3 + Math.random() * 0.5), k: 2 + Math.floor(Math.random() * 5) }))
     let next = 0
     const t0 = performance.now()
     const frame = (now) => {
@@ -35,8 +38,9 @@ export default function Race({ pool, winners, speed, sound, onDone }) {
       const t = now - t0
       for (let i = 0; i < pool.length; i++) {
         const x = t / F[i]
-        // wobble is 0 at start/finish and can't cross the line early: 0.06·sin(πx) < 1−x for x < 1
-        const p = x >= 1 ? 1 : Math.max(0, x + 0.06 * Math.sin((wob[i].f * t) / 1000 + wob[i].ph) * Math.sin(Math.PI * x))
+        // speeds up and slows down but never moves backward, and can't cross the line before F[i]
+        const { a, k } = wob[i]
+        const p = x >= 1 ? 1 : x + (a * Math.sin(k * Math.PI * x)) / (k * Math.PI)
         runners.current[i]?.style.setProperty('--p', p)
       }
       let crossed = false

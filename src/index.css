@@ -242,6 +242,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
   font-weight: 700;
   transition: border-color 0.2s, background 0.2s;
 }
+.slots .next-btn { grid-column: 1 / -1; justify-self: center; align-self: center; }
 .slots.many .slot { font-size: 15px; padding: 8px 12px; }
 .slot:not(.locked) .slot-name { opacity: 0.55; filter: blur(0.6px); }
 .slot.locked { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 16%, var(--panel)); animation: pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1); }
@@ -303,7 +304,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .mode-icon { font-size: 26px; }
 .stepper { display: flex; gap: 6px; align-items: center; }
 .stepper button { width: 42px; height: 42px; padding: 0; font-size: 20px; }
-.stepper input {
+.stepper input, .custom-seconds input {
   width: 100px;
   height: 42px;
   text-align: center;
@@ -318,6 +319,8 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .segmented button { border: none; background: none; }
 .segmented button.active { background: var(--panel); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15); font-weight: 600; }
 .toggle { display: flex; align-items: center; gap: 10px; margin-top: 18px; cursor: pointer; }
+.custom-seconds { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.custom-seconds input { width: 90px; height: 36px; }
 .toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
 
 .winner-modal { text-align: center; }

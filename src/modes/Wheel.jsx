@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { TAU, sleep } from '../draw'
 import { beep } from '../sound'
+import useNextGate from '../useNextGate'
 
 const POINTER = -Math.PI / 2 // pointer sits at 12 o'clock
 const color = (i) => `hsl(${(i * 137.508) % 360} 72% 56%)`
@@ -63,7 +64,8 @@ function drawWheel(canvas, list, rot) {
 
 const sliceAt = (rot, n) => Math.floor(((((POINTER - rot) % TAU) + TAU) % TAU) / (TAU / n))
 
-export default function Wheel({ pool, winners, speed, sound, onDone }) {
+export default function Wheel({ pool, winners, seconds, sound, onDone }) {
+  const gate = useNextGate()
   const canvas = useRef(null)
   const rot = useRef(0)
   const [latest, setLatest] = useState(null)
@@ -79,6 +81,7 @@ export default function Wheel({ pool, winners, speed, sound, onDone }) {
   }, [pool, winners])
 
   useEffect(() => {
+    gate.reset()
     if (!winners) {
       setPicked([])
       setLatest(null)
@@ -113,16 +116,14 @@ export default function Wheel({ pool, winners, speed, sound, onDone }) {
 
     ;(async () => {
       let list = [...pool]
-      const dur = speed * Math.min(4500, Math.max(1200, 9000 / winners.length))
-      const pause = speed * Math.min(900, Math.max(250, 3000 / winners.length))
-      for (const w of winners) {
+      for (const [k, w] of winners.entries()) {
         const i = list.indexOf(w)
-        await spin(list, i, dur)
+        await spin(list, i, seconds * 1000)
         if (!alive) return
         setLatest(w)
         setPicked((p) => [...p, w])
         if (sound) beep(660, 0.15, 0.06)
-        await sleep(pause)
+        await (k < winners.length - 1 ? gate.wait() : sleep(600))
         if (!alive) return
         list = list.filter((_, j) => j !== i)
         drawWheel(canvas.current, list, rot.current)
@@ -156,6 +157,11 @@ export default function Wheel({ pool, winners, speed, sound, onDone }) {
           ))}
           {left > 0 && <span className="pill empty">+{left} to go</span>}
         </div>
+      )}
+      {gate.waiting && (
+        <button className="primary" onClick={gate.next}>
+          Spin for next winner ({picked.length + 1} of {winners.length})
+        </button>
       )}
     </div>
   )

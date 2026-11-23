@@ -1,36 +1,49 @@
 import { useEffect, useMemo, useState } from 'react'
 import { beep } from '../sound'
+import { sleep } from '../draw'
+import useNextGate from '../useNextGate'
 
-export default function Shuffle({ pool, winners, speed, sound, onDone }) {
+export default function Shuffle({ pool, winners, seconds, sound, onDone }) {
+  const gate = useNextGate()
   const [slots, setSlots] = useState([])
   const preview = useMemo(() => [...pool].sort(() => Math.random() - 0.5).slice(0, 60), [pool])
 
   useEffect(() => {
+    gate.reset()
     if (!winners) {
       setSlots([])
       return
     }
     let alive = true
+    let locked = 0
+    let paused = false
     const n = winners.length
-    const warm = 1200 * speed
-    const gap = speed * Math.max(70, 2800 / n)
     const rand = () => pool[Math.floor(Math.random() * pool.length)]
-    const t0 = performance.now()
-    let lastLocked = 0
+    const render = () => setSlots(winners.map((w, i) => (i < locked ? { name: w, locked: true } : { name: rand(), locked: false })))
+    // flicker unlocked slots, except while waiting for Next so the screen holds still
     const id = setInterval(() => {
-      const t = performance.now() - t0
-      const locked = t < warm ? 0 : Math.min(n, Math.floor((t - warm) / gap) + 1)
-      setSlots(winners.map((w, i) => (i < locked ? { name: w, locked: true } : { name: rand(), locked: false })))
-      if (sound) {
-        if (locked > lastLocked) beep(700, 0.08, 0.05)
-        else if (locked < n) beep(300 + Math.random() * 200, 0.015, 0.015)
-      }
-      lastLocked = locked
-      if (locked === n) {
-        clearInterval(id)
-        setTimeout(() => alive && onDone(), 800)
-      }
+      if (paused) return
+      render()
+      if (sound) beep(300 + Math.random() * 200, 0.015, 0.015)
     }, 70)
+    ;(async () => {
+      for (let k = 0; k < n; k++) {
+        await sleep(seconds * 1000)
+        if (!alive) return
+        locked = k + 1
+        render()
+        if (sound) beep(700, 0.08, 0.05)
+        if (locked < n) {
+          paused = true
+          await gate.wait()
+          paused = false
+          if (!alive) return
+        }
+      }
+      clearInterval(id)
+      await sleep(800)
+      if (alive) onDone()
+    })()
     return () => {
       alive = false
       clearInterval(id)
@@ -61,6 +74,11 @@ export default function Shuffle({ pool, winners, speed, sound, onDone }) {
           <span className="slot-name">{s.name}</span>
         </div>
       ))}
+      {gate.waiting && (
+        <button className="primary next-btn" onClick={gate.next}>
+          Next winner ({slots.filter((x) => x.locked).length + 1} of {slots.length})
+        </button>
+      )}
     </div>
   )
 }

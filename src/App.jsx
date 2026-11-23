@@ -8,7 +8,7 @@ import Wheel from './modes/Wheel'
 import Race from './modes/Race'
 import Shuffle from './modes/Shuffle'
 
-export const DEFAULT_SETTINGS = { mode: 'wheel', perRound: 5, speed: 1, sound: true }
+export const DEFAULT_SETTINGS = { mode: 'wheel', perRound: 1, seconds: 2.5, sound: true, allowDuplicates: false, removeWinners: true }
 const STAGES = { wheel: Wheel, race: Race, shuffle: Shuffle }
 
 export default function App() {
@@ -20,8 +20,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
 
   const settings = { ...DEFAULT_SETTINGS, ...saved }
-  const { names, dupes } = useMemo(() => parseNames(text), [text])
-  const pool = useMemo(() => remainingPool(names, rounds), [names, rounds])
+  const { names, dupes } = useMemo(() => parseNames(text, settings.allowDuplicates), [text, settings.allowDuplicates])
+  const pool = useMemo(() => (settings.removeWinners ? remainingPool(names, rounds) : names), [names, rounds, settings.removeWinners])
   const drawing = winners !== null
   const Stage = STAGES[settings.mode] || Wheel
   const nextCount = Math.min(settings.perRound, pool.length)
@@ -108,7 +108,7 @@ export default function App() {
         </section>
 
         <section className="panel stage">
-          <Stage key={settings.mode} pool={pool} winners={winners} speed={settings.speed} sound={settings.sound} onDone={finish} />
+          <Stage key={settings.mode} pool={pool} winners={winners} seconds={settings.seconds} sound={settings.sound} onDone={finish} />
           <div className="stage-actions">
             {drawing ? (
               <button className="secondary" onClick={finish}>Skip animation</button>

@@ -21,4 +21,7 @@ assert.deepEqual(rounds.flatMap((r) => r.winners).sort(), [...twelve].sort())
 assert.equal(pickWinners(['a', 'b'], 50).length, 2)
 assert.equal(pickWinners(['a', 'b', 'c'], 0).length, 1)
 assert.deepEqual(pickWinners([], 5), [])
+assert.deepEqual(parseNames('a\nA\na', true), { names: ['a', 'A', 'a'], dupes: [] })
+// duplicates: one win removes one occurrence
+assert.deepEqual(remainingPool(['a', 'a', 'b'], [{ winners: ['a'] }]), ['a', 'b'])
 console.log('draw.test.js: ok')
